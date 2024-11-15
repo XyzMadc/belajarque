@@ -1,59 +1,52 @@
-import { useState } from "react";
 import { useRouter } from "next/router";
 import AuthForm from "@/components/layout/authLayout";
-import kontenbase from "@/lib/kontenbase";
+import { registerSchema } from "@/utils/validation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
 export default function RegisterPage() {
-  const { replace } = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({}); // To store validation errors
+  const { push } = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting: isLoading },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+  });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({}); // Clear previous errors
-    const target = e.target;
-    const firstName = target.firstName.value;
-    const lastName = target.lastName.value;
-    const userName = target.userName.value;
-    const email = target.email.value;
-    const password = target.password.value;
+  const onSubmit = async (data) => {
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-    // Basic client-side validation
-    let validationErrors = {};
-    if (!firstName) validationErrors.firstName = "First name is required";
-    if (!lastName) validationErrors.lastName = "Last name is required";
-    if (!userName) validationErrors.userName = "Username is required";
-    if (!email) validationErrors.email = "Email is required";
-    if (!password) validationErrors.password = "Password is required";
+      const result = await response.json();
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setIsLoading(false);
-      return; // Prevent form submission if there are validation errors
-    }
+      if (!response.ok) {
+        setError("root", {
+          type: "manual",
+          message: result.error || "Registration failed",
+        });
+        return;
+      }
 
-    // Proceed with registration if no errors
-    const { error } = await kontenbase.auth.register({
-      email,
-      password,
-      firstName,
-      lastName,
-      userName,
-    });
-
-    if (error) {
-      alert(error.message);
-      setIsLoading(false);
-    } else {
-      replace("/"); // Redirect to the homepage after successful registration
+      push("/");
+    } catch (error) {
+      setError("root", {
+        type: "manual",
+        message: "An unexpected error occurred",
+      });
     }
   };
 
   return (
     <AuthForm
       title="Create an Account"
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onSubmit)}
       loading={isLoading}
       buttonLabel="Register"
       isLogin={false}
@@ -68,13 +61,18 @@ export default function RegisterPage() {
           </label>
           <input
             id="firstName"
-            name="firstName"
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your First Name"
+            {...register("firstName")}
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
+              ${
+                errors.firstName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              }`}
+            placeholder="Enter your first name"
           />
           {errors.firstName && (
-            <p className="text-sm text-red-500">{errors.firstName}</p>
+            <p className="text-sm text-red-500">{errors.firstName.message}</p>
           )}
         </div>
 
@@ -87,13 +85,18 @@ export default function RegisterPage() {
           </label>
           <input
             id="lastName"
-            name="lastName"
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your Last Name"
+            {...register("lastName")}
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
+              ${
+                errors.lastName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              }`}
+            placeholder="Enter your last name"
           />
           {errors.lastName && (
-            <p className="text-sm text-red-500">{errors.lastName}</p>
+            <p className="text-sm text-red-500">{errors.lastName.message}</p>
           )}
         </div>
       </div>
@@ -107,13 +110,18 @@ export default function RegisterPage() {
         </label>
         <input
           id="userName"
-          name="userName"
           type="text"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {...register("userName")}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
+              ${
+                errors.userName
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              }`}
           placeholder="Enter your username"
         />
         {errors.userName && (
-          <p className="text-sm text-red-500">{errors.userName}</p>
+          <p className="text-sm text-red-500">{errors.userName.message}</p>
         )}
       </div>
 
@@ -126,12 +134,19 @@ export default function RegisterPage() {
         </label>
         <input
           id="email"
-          name="email"
           type="email"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {...register("email")}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
+              ${
+                errors.email
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              }`}
           placeholder="Enter your email"
         />
-        {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+        {errors.email && (
+          <p className="text-sm text-red-500">{errors.email.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -143,13 +158,18 @@ export default function RegisterPage() {
         </label>
         <input
           id="password"
-          name="password"
           type="password"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          {...register("password")}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
+              ${
+                errors.password
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+              }`}
           placeholder="Enter your password"
         />
         {errors.password && (
-          <p className="text-sm text-red-500">{errors.password}</p>
+          <p className="text-sm text-red-500">{errors.password.message}</p>
         )}
       </div>
     </AuthForm>
