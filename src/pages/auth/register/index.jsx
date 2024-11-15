@@ -1,55 +1,119 @@
-import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import AuthForm from "@/components/layout/authLayout";
-import { registerSchema } from "@/utils/validation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { handleRegister } from "@/services/auth/authHandlers";
+import kontenbase from "@/lib/kontenbase";
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(registerSchema),
-  });
+  const { replace } = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({}); // To store validation errors
 
-  const onSubmit = async (data) => {
-    const { error } = await handleRegister(data.email, data.password);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrors({}); // Clear previous errors
+    const target = e.target;
+    const firstName = target.firstName.value;
+    const lastName = target.lastName.value;
+    const userName = target.userName.value;
+    const email = target.email.value;
+    const password = target.password.value;
+
+    // Basic client-side validation
+    let validationErrors = {};
+    if (!firstName) validationErrors.firstName = "First name is required";
+    if (!lastName) validationErrors.lastName = "Last name is required";
+    if (!userName) validationErrors.userName = "Username is required";
+    if (!email) validationErrors.email = "Email is required";
+    if (!password) validationErrors.password = "Password is required";
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setIsLoading(false);
+      return; // Prevent form submission if there are validation errors
+    }
+
+    // Proceed with registration if no errors
+    const { error } = await kontenbase.auth.register({
+      email,
+      password,
+      firstName,
+      lastName,
+      userName,
+    });
 
     if (error) {
-      alert("Registrasi gagal: " + error.message);
+      alert(error.message);
+      setIsLoading(false);
     } else {
-      alert("Registrasi berhasil! Silakan login.");
-      router.push("/auth/login");
+      replace("/"); // Redirect to the homepage after successful registration
     }
   };
 
   return (
     <AuthForm
       title="Create an Account"
-      onSubmit={handleSubmit(onSubmit)}
-      loading={isSubmitting}
+      onSubmit={handleSubmit}
+      loading={isLoading}
       buttonLabel="Register"
       isLogin={false}
     >
+      <div className="flex gap-4">
+        <div className="space-y-2 w-1/2">
+          <label
+            htmlFor="firstName"
+            className="block text-sm font-medium text-gray-700"
+          >
+            First Name
+          </label>
+          <input
+            id="firstName"
+            name="firstName"
+            type="text"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter your First Name"
+          />
+          {errors.firstName && (
+            <p className="text-sm text-red-500">{errors.firstName}</p>
+          )}
+        </div>
+
+        <div className="space-y-2 w-1/2">
+          <label
+            htmlFor="lastName"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Last Name
+          </label>
+          <input
+            id="lastName"
+            name="lastName"
+            type="text"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter your Last Name"
+          />
+          {errors.lastName && (
+            <p className="text-sm text-red-500">{errors.lastName}</p>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-2">
         <label
-          htmlFor="username"
+          htmlFor="userName"
           className="block text-sm font-medium text-gray-700"
         >
           Username
         </label>
         <input
-          id="username"
+          id="userName"
+          name="userName"
           type="text"
-          {...register("username", { required: true })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter your username"
         />
-        {errors.username && (
-          <p className="text-sm text-red-500">Username is required</p>
+        {errors.userName && (
+          <p className="text-sm text-red-500">{errors.userName}</p>
         )}
       </div>
 
@@ -62,14 +126,12 @@ export default function RegisterPage() {
         </label>
         <input
           id="email"
+          name="email"
           type="email"
-          {...register("email", { required: true })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter your email"
         />
-        {errors.email && (
-          <p className="text-sm text-red-500">Email is required</p>
-        )}
+        {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
       </div>
 
       <div className="space-y-2">
@@ -81,13 +143,13 @@ export default function RegisterPage() {
         </label>
         <input
           id="password"
+          name="password"
           type="password"
-          {...register("password", { required: true })}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter your password"
         />
         {errors.password && (
-          <p className="text-sm text-red-500">Password is required</p>
+          <p className="text-sm text-red-500">{errors.password}</p>
         )}
       </div>
     </AuthForm>

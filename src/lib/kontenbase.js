@@ -1,11 +1,7 @@
-import axios from "axios";
+import { KontenbaseClient } from "@kontenbase/sdk";
 
-const kontenbase = axios.create({
-  baseURL: "https://api.kontenbase.com/v1/api",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.NEXT_PUBLIC_KONTENBASE_API_KEY}`,
-  },
+const kontenbase = new KontenbaseClient({
+  apiKey: process.env.NEXT_PUBLIC_KONTENBASE_API_KEY || "",
 });
 
 export default kontenbase;

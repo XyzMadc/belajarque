@@ -114,7 +114,7 @@ export default function AuthForm({
               Dapatkan kemudahan belajar dengan BelajarQ.
             </h2>
             <p className="text-sm">
-              Ayo bergabung untuk mendapatkan pelajaran baru dan quiz dan
+              Ayo bergabung untuk mendapatkan pelajaran baru dan quiz dan yang
               menarik.
             </p>
           </div>
