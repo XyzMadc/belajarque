@@ -1,106 +1,51 @@
 import { useRouter } from "next/router";
 import AuthForm from "@/components/layout/authLayout";
-import { registerSchema } from "@/utils/validation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
 
 export default function RegisterPage() {
-  const { push } = useRouter();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting: isLoading },
-  } = useForm({
-    resolver: zodResolver(registerSchema),
+  const [formData, setFormData] = useState({
+    userName: "",
+    email: "",
+    password: "",
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        setError("root", {
-          type: "manual",
-          message: result.error || "Registration failed",
-        });
-        return;
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setIsLoading(false);
+        router.push("/auth/login");
       }
-
-      push("/");
     } catch (error) {
-      setError("root", {
-        type: "manual",
-        message: "An unexpected error occurred",
-      });
+      setIsLoading(false);
+      setError("An error occurred");
     }
   };
 
   return (
     <AuthForm
       title="Create an Account"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit}
       loading={isLoading}
       buttonLabel="Register"
       isLogin={false}
     >
-      <div className="flex gap-4">
-        <div className="space-y-2 w-1/2">
-          <label
-            htmlFor="firstName"
-            className="block text-sm font-medium text-gray-700"
-          >
-            First Name
-          </label>
-          <input
-            id="firstName"
-            type="text"
-            {...register("firstName")}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
-              ${
-                errors.firstName
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-              }`}
-            placeholder="Enter your first name"
-          />
-          {errors.firstName && (
-            <p className="text-sm text-red-500">{errors.firstName.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2 w-1/2">
-          <label
-            htmlFor="lastName"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Last Name
-          </label>
-          <input
-            id="lastName"
-            type="text"
-            {...register("lastName")}
-            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
-              ${
-                errors.lastName
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-              }`}
-            placeholder="Enter your last name"
-          />
-          {errors.lastName && (
-            <p className="text-sm text-red-500">{errors.lastName.message}</p>
-          )}
-        </div>
-      </div>
-
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       <div className="space-y-2">
         <label
           htmlFor="userName"
@@ -110,19 +55,15 @@ export default function RegisterPage() {
         </label>
         <input
           id="userName"
-          type="text"
-          {...register("userName")}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
-              ${
-                errors.userName
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-              }`}
+          type="userName"
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter your username"
+          value={formData.userName}
+          onChange={(e) =>
+            setFormData({ ...formData, userName: e.target.value })
+          }
+          required
         />
-        {errors.userName && (
-          <p className="text-sm text-red-500">{errors.userName.message}</p>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -135,18 +76,12 @@ export default function RegisterPage() {
         <input
           id="email"
           type="email"
-          {...register("email")}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
-              ${
-                errors.email
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-              }`}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter your email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          required
         />
-        {errors.email && (
-          <p className="text-sm text-red-500">{errors.email.message}</p>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -159,18 +94,14 @@ export default function RegisterPage() {
         <input
           id="password"
           type="password"
-          {...register("password")}
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 
-              ${
-                errors.password
-                  ? "border-red-500 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-              }`}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Enter your password"
+          value={formData.password}
+          onChange={(e) =>
+            setFormData({ ...formData, password: e.target.value })
+          }
+          required
         />
-        {errors.password && (
-          <p className="text-sm text-red-500">{errors.password.message}</p>
-        )}
       </div>
     </AuthForm>
   );
